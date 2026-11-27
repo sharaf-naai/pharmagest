@@ -1,9 +1,11 @@
 package pharmacie.ui.panels;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.math.BigDecimal;
@@ -12,20 +14,15 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
+import javax.swing.Box;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 import pharmacie.dao.ApprovisionnementDAO;
@@ -37,6 +34,14 @@ import pharmacie.model.Fournisseur;
 import pharmacie.model.LigneApprovisionnement;
 import pharmacie.model.Medicament;
 import pharmacie.ui.EcranOutils;
+import pharmacie.ui.OutilsEcran;
+import pharmacie.ui.theme.Bouton;
+import pharmacie.ui.theme.Carte;
+import pharmacie.ui.theme.ChampTexte;
+import pharmacie.ui.theme.Icone;
+import pharmacie.ui.theme.OngletsSegmentes;
+import pharmacie.ui.theme.Tableaux;
+import pharmacie.ui.theme.Theme;
 import pharmacie.util.DAOException;
 import pharmacie.util.RegleGestionException;
 import pharmacie.util.Session;
@@ -47,7 +52,10 @@ import pharmacie.util.Session;
  */
 public class StockPanel extends JPanel {
 
+    // Mots exacts des badges (couleurs données par Ton.pour)
     private static final String STOCK_FAIBLE = "Stock faible";
+    private static final String EN_STOCK = "En stock";
+    private static final String PERIME = "Périmé";
 
     private final MedicamentDAO medicamentDAO = new MedicamentDAO();
     private final FournisseurDAO fournisseurDAO = new FournisseurDAO();
@@ -60,13 +68,13 @@ public class StockPanel extends JPanel {
 
     // --- Approvisionnement
     private final JComboBox<Fournisseur> comboFournisseur = new JComboBox<>();
-    private final JTextField champDate = new JTextField(10);
-    private final JTextField champReference = new JTextField(10);
+    private final ChampTexte champDate = champ(10);
+    private final ChampTexte champReference = champ(10);
     private final JComboBox<Medicament> comboMedicament = new JComboBox<>();
-    private final JTextField champQuantite = new JTextField(5);
-    private final JTextField champPrixAchat = new JTextField(7);
-    private final JTextField champLot = new JTextField(8);
-    private final JTextField champPeremption = new JTextField(10);
+    private final ChampTexte champQuantite = champ(5);
+    private final ChampTexte champPrixAchat = champ(7);
+    private final ChampTexte champLot = champ(8);
+    private final ChampTexte champPeremption = champ(10);
     private final DefaultTableModel modeleLignes = EcranOutils.modeleLectureSeule(
             "Médicament", "Quantité", "Prix d'achat", "Lot", "Péremption", "Sous-total");
     private final JTable tableLignes = new JTable(modeleLignes);
@@ -87,7 +95,8 @@ public class StockPanel extends JPanel {
 
     public StockPanel() {
         super(new BorderLayout());
-        JTabbedPane sousOnglets = new JTabbedPane();
+        setOpaque(false); // le fond gris vient de MainFrame
+        OngletsSegmentes sousOnglets = new OngletsSegmentes();
         sousOnglets.addTab("État du stock", ongletEtat());
         if (Session.estAdmin()) { // RG03 : le pharmacien ne saisit pas de livraison
             sousOnglets.addTab("Approvisionnement", ongletApprovisionnement());
@@ -119,27 +128,29 @@ public class StockPanel extends JPanel {
 
     private JPanel ongletEtat() {
         JTable table = new JTable(modeleEtat);
-        // RG24 : la colonne « État » est écrite en rouge quand le stock est faible
-        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable t, Object valeur, boolean choisi,
-                                                           boolean focus, int ligne, int colonne) {
-                Component c = super.getTableCellRendererComponent(t, valeur, choisi, focus, ligne, colonne);
-                c.setForeground(STOCK_FAIBLE.equals(valeur) ? Color.RED
-                        : (choisi ? t.getSelectionForeground() : t.getForeground()));
-                return c;
-            }
-        });
+        Tableaux.styliser(table);
+        Tableaux.largeur(table, 0, 50);
+        Tableaux.largeur(table, 1, 220);
+        Tableaux.colonneEnGras(table, 1);
+        Tableaux.alignerADroite(table, 3);
+        Tableaux.alignerADroite(table, 4);
+        Tableaux.colonneBadge(table, 5); // RG24 : badge rouge « Stock faible », vert « En stock »
+        Tableaux.largeur(table, 5, 130);
+
+        caseStockFaible.setOpaque(false);
+        caseStockFaible.setFont(Theme.police(13f));
+        caseStockFaible.setForeground(Theme.TEXTE);
         caseStockFaible.addActionListener(e -> chargerEtat());
-        JButton boutonActualiser = new JButton("Actualiser");
+        Bouton boutonActualiser = new Bouton("Actualiser", Bouton.Style.SECONDAIRE, Icone.Type.ACTUALISER);
         boutonActualiser.addActionListener(e -> chargerEtat());
 
-        JPanel haut = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel haut = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        haut.setOpaque(false);
         haut.add(caseStockFaible);
         haut.add(boutonActualiser);
-        JPanel p = new JPanel(new BorderLayout());
+        Carte p = new Carte(new BorderLayout(0, 12));
         p.add(haut, BorderLayout.NORTH);
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
+        p.add(Tableaux.defilement(table), BorderLayout.CENTER);
         return p;
     }
 
@@ -150,7 +161,7 @@ public class StockPanel extends JPanel {
             modeleEtat.setRowCount(0);
             for (Medicament m : liste) {
                 modeleEtat.addRow(new Object[] {m.getIdMedicament(), m.toString(), m.getLibelleCategorie(),
-                        m.getQuantiteStock(), m.getSeuilMinimal(), m.estStockFaible() ? STOCK_FAIBLE : "OK"});
+                        m.getQuantiteStock(), m.getSeuilMinimal(), m.estStockFaible() ? STOCK_FAIBLE : EN_STOCK});
             }
         } catch (DAOException e) {
             EcranOutils.afficherErreur(this, e);
@@ -161,51 +172,105 @@ public class StockPanel extends JPanel {
 
     private JPanel ongletApprovisionnement() {
         champDate.setText(LocalDate.now().toString()); // date du jour par défaut
+        OutilsEcran.styliserListe(comboFournisseur);
+        OutilsEcran.styliserListe(comboMedicament);
 
-        JPanel entete = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        entete.setBorder(BorderFactory.createTitledBorder("Livraison"));
-        entete.add(new JLabel("Fournisseur :"));
-        entete.add(comboFournisseur);
-        entete.add(new JLabel("Date (AAAA-MM-JJ) :"));
-        entete.add(champDate);
-        entete.add(new JLabel("Référence du bon :"));
-        entete.add(champReference);
+        JPanel entete = ligneDeChamps(
+                new String[] {"Fournisseur", "Date (AAAA-MM-JJ)", "Référence du bon"},
+                comboFournisseur, champDate, champReference);
 
-        JButton boutonAjouter = new JButton("Ajouter la ligne");
+        Bouton boutonAjouter = new Bouton("Ajouter la ligne", Bouton.Style.SECONDAIRE, Icone.Type.AJOUTER);
         boutonAjouter.addActionListener(e -> ajouterLigne());
-        JPanel saisieLigne = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        saisieLigne.setBorder(BorderFactory.createTitledBorder("Ligne"));
-        saisieLigne.add(new JLabel("Médicament :"));
-        saisieLigne.add(comboMedicament);
-        saisieLigne.add(new JLabel("Qté :"));
-        saisieLigne.add(champQuantite);
-        saisieLigne.add(new JLabel("Prix d'achat :"));
-        saisieLigne.add(champPrixAchat);
-        saisieLigne.add(new JLabel("N° de lot :"));
-        saisieLigne.add(champLot);
-        saisieLigne.add(new JLabel("Péremption (AAAA-MM-JJ) :"));
-        saisieLigne.add(champPeremption);
-        saisieLigne.add(boutonAjouter);
+        JPanel saisieLigne = ligneDeChamps(
+                new String[] {"Médicament", "Qté", "Prix d'achat", "N° de lot", "Péremption (AAAA-MM-JJ)", null},
+                comboMedicament, champQuantite, champPrixAchat, champLot, champPeremption, boutonAjouter);
 
-        JPanel haut = new JPanel(new BorderLayout());
-        haut.add(entete, BorderLayout.NORTH);
-        haut.add(saisieLigne, BorderLayout.CENTER);
+        // Carte du haut : la livraison puis la ligne à ajouter
+        JPanel blocs = new JPanel(new BorderLayout(0, 12));
+        blocs.setOpaque(false);
+        JPanel titreLivraison = new JPanel(new BorderLayout(0, 8));
+        titreLivraison.setOpaque(false);
+        titreLivraison.add(OutilsEcran.titreCarte("Livraison"), BorderLayout.NORTH);
+        titreLivraison.add(entete, BorderLayout.CENTER);
+        JPanel titreLigne = new JPanel(new BorderLayout(0, 8));
+        titreLigne.setOpaque(false);
+        titreLigne.add(OutilsEcran.titreCarte("Ligne"), BorderLayout.NORTH);
+        titreLigne.add(saisieLigne, BorderLayout.CENTER);
+        blocs.add(titreLivraison, BorderLayout.NORTH);
+        blocs.add(titreLigne, BorderLayout.CENTER);
+        Carte haut = new Carte();
+        haut.add(blocs, BorderLayout.CENTER);
 
-        JButton boutonRetirer = new JButton("Retirer");
+        Bouton boutonRetirer = new Bouton("Retirer", Bouton.Style.DANGER, Icone.Type.SUPPRIMER);
         boutonRetirer.addActionListener(e -> retirerLigne());
-        JButton boutonEnregistrer = new JButton("Enregistrer");
+        Bouton boutonEnregistrer = new Bouton("Enregistrer", Bouton.Style.PRIMAIRE, Icone.Type.VALIDER);
         boutonEnregistrer.addActionListener(e -> enregistrerLivraison());
-        JPanel bas = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bas.add(boutonRetirer);
-        bas.add(labelTotal);
-        bas.add(boutonEnregistrer);
 
-        tableLignes.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        JPanel p = new JPanel(new BorderLayout());
+        // Total à droite : libellé gris + montant en gros
+        JLabel libelleTotal = new JLabel("Total");
+        libelleTotal.setFont(Theme.police(14f));
+        libelleTotal.setForeground(Theme.TEXTE_SECONDAIRE);
+        labelTotal.setFont(Theme.police(Font.BOLD, 22f));
+        labelTotal.setForeground(Theme.TEXTE);
+        JPanel droite = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        droite.setOpaque(false);
+        droite.add(libelleTotal);
+        droite.add(labelTotal);
+        droite.add(boutonEnregistrer);
+        JPanel bas = new JPanel(new BorderLayout());
+        bas.setOpaque(false);
+        JPanel gauche = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        gauche.setOpaque(false);
+        gauche.add(boutonRetirer);
+        bas.add(gauche, BorderLayout.WEST);
+        bas.add(droite, BorderLayout.EAST);
+
+        Tableaux.styliser(tableLignes);
+        Tableaux.colonneEnGras(tableLignes, 0);
+        Tableaux.largeur(tableLignes, 0, 200);
+        Tableaux.alignerADroite(tableLignes, 1);
+        Tableaux.alignerADroite(tableLignes, 2);
+        Tableaux.alignerADroite(tableLignes, 5);
+        Carte carteLignes = new Carte(new BorderLayout(0, 12));
+        carteLignes.add(Tableaux.defilement(tableLignes), BorderLayout.CENTER);
+        carteLignes.add(bas, BorderLayout.SOUTH);
+
+        JPanel p = new JPanel(new BorderLayout(0, 16));
+        p.setOpaque(false);
         p.add(haut, BorderLayout.NORTH);
-        p.add(new JScrollPane(tableLignes), BorderLayout.CENTER);
-        p.add(bas, BorderLayout.SOUTH);
+        p.add(carteLignes, BorderLayout.CENTER);
         afficherTotal();
+        return p;
+    }
+
+    /** Champ de saisie du thème avec une largeur en colonnes. */
+    private static ChampTexte champ(int colonnes) {
+        ChampTexte c = new ChampTexte();
+        c.setColumns(colonnes);
+        return c;
+    }
+
+    /** Une rangée de champs, chaque libellé au-dessus de son champ (libellé null = pas de libellé). */
+    private static JPanel ligneDeChamps(String[] libelles, JComponent... champs) {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setOpaque(false);
+        GridBagConstraints c = new GridBagConstraints();
+        c.anchor = GridBagConstraints.WEST;
+        for (int i = 0; i < champs.length; i++) {
+            c.gridx = i;
+            c.gridy = 0;
+            c.insets = new Insets(0, 0, 6, 12);
+            if (libelles[i] != null) {
+                p.add(OutilsEcran.etiquette(libelles[i]), c);
+            }
+            c.gridy = 1;
+            c.insets = new Insets(0, 0, 0, 12);
+            p.add(champs[i], c);
+        }
+        // Espace libre à droite : les champs restent collés à gauche
+        c.gridx = champs.length;
+        c.weightx = 1;
+        p.add(Box.createHorizontalGlue(), c);
         return p;
     }
 
@@ -272,7 +337,7 @@ public class StockPanel extends JPanel {
         for (LigneApprovisionnement l : lignes) {
             total = total.add(l.getSousTotal());
         }
-        labelTotal.setText("Total : " + total + " DH");
+        labelTotal.setText(total + " DH"); // le libellé « Total » est à côté
     }
 
     private void enregistrerLivraison() {
@@ -310,17 +375,36 @@ public class StockPanel extends JPanel {
     // ===================================================================== Historique
 
     private JSplitPane ongletHistorique() {
-        tableLivraisons.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        Tableaux.styliser(tableLivraisons);
+        Tableaux.largeur(tableLivraisons, 0, 50);
+        Tableaux.colonneEnGras(tableLivraisons, 2);
+        Tableaux.alignerADroite(tableLivraisons, 4);
         tableLivraisons.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 chargerDetail();
             }
         });
-        JPanel detail = new JPanel(new BorderLayout());
-        detail.setBorder(BorderFactory.createTitledBorder("Lignes de la livraison sélectionnée"));
-        detail.add(new JScrollPane(new JTable(modeleDetail)), BorderLayout.CENTER);
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(tableLivraisons), detail);
+
+        JTable tableDetail = new JTable(modeleDetail);
+        Tableaux.styliser(tableDetail);
+        Tableaux.colonneEnGras(tableDetail, 0);
+        Tableaux.largeur(tableDetail, 0, 200);
+        Tableaux.alignerADroite(tableDetail, 1);
+        Tableaux.alignerADroite(tableDetail, 2);
+        Tableaux.alignerADroite(tableDetail, 5);
+        Carte detail = new Carte(new BorderLayout(0, 12));
+        detail.add(OutilsEcran.titreCarte("Lignes de la livraison sélectionnée"), BorderLayout.NORTH);
+        detail.add(Tableaux.defilement(tableDetail), BorderLayout.CENTER);
+
+        Carte liste = new Carte();
+        liste.add(Tableaux.defilement(tableLivraisons), BorderLayout.CENTER);
+
+        // Séparateur invisible de 16 px entre les deux cartes
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, liste, detail);
         split.setResizeWeight(0.5);
+        split.setOpaque(false);
+        split.setBorder(null);
+        split.setDividerSize(16);
         return split;
     }
 
@@ -358,21 +442,18 @@ public class StockPanel extends JPanel {
 
     private JPanel ongletPeremptions() {
         JTable table = new JTable(modelePeremption);
-        // RG26 : lot déjà périmé (jours restants < 0) affiché en rouge
-        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable t, Object valeur, boolean choisi,
-                                                           boolean focus, int ligne, int colonne) {
-                Component c = super.getTableCellRendererComponent(t, valeur, choisi, focus, ligne, colonne);
-                boolean perime = (Integer) modelePeremption.getValueAt(ligne, 3) < 0;
-                c.setForeground(perime ? Color.RED : (choisi ? t.getSelectionForeground() : t.getForeground()));
-                return c;
-            }
-        });
-        JPanel p = new JPanel(new BorderLayout());
-        p.add(new JLabel("  Lots qui expirent dans 30 jours ou moins, médicament encore en stock (RG26)."),
-                BorderLayout.NORTH);
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
+        Tableaux.styliser(table);
+        Tableaux.colonneEnGras(table, 0);
+        Tableaux.largeur(table, 0, 220);
+        Tableaux.colonneBadge(table, 3); // RG26 : « Périmé » en rouge, « N jours » en orange
+        Tableaux.largeur(table, 3, 130);
+
+        JLabel aide = new JLabel("Lots qui expirent dans 30 jours ou moins, médicament encore en stock (RG26).");
+        aide.setFont(Theme.police(13f));
+        aide.setForeground(Theme.TEXTE_SECONDAIRE);
+        Carte p = new Carte(new BorderLayout(0, 12));
+        p.add(aide, BorderLayout.NORTH);
+        p.add(Tableaux.defilement(table), BorderLayout.CENTER);
         return p;
     }
 
@@ -380,8 +461,10 @@ public class StockPanel extends JPanel {
         try {
             modelePeremption.setRowCount(0);
             for (AlertePeremption a : approvisionnementDAO.listerAlertesPeremption()) {
+                // Lot déjà périmé (jours restants < 0) : badge « Périmé »
+                String jours = a.getJoursRestants() < 0 ? PERIME : a.getJoursRestants() + " jours";
                 modelePeremption.addRow(new Object[] {a.getNomMedicament(), a.getNumeroLot(),
-                        a.getDatePeremption(), a.getJoursRestants()});
+                        a.getDatePeremption(), jours});
             }
         } catch (DAOException e) {
             EcranOutils.afficherErreur(this, e);

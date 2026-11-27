@@ -82,7 +82,10 @@ src/pharmacie/
                             RegleGestionException (business rule, message shown to the user)
   model/                    one class per table + Role enum + AlertePeremption + IndicateursTableauDeBord
   dao/                      one DAO per table + TableauDeBordDAO
-  ui/LoginFrame, ui/MainFrame
+  ui/LoginFrame + PanneauConnexion   login screen
+  ui/MainFrame + BarreLaterale + EnTete   sidebar menu, top bar, one page per module (CardLayout)
+  ui/theme/                 design system: Theme, Carte, Bouton, ChampTexte, ChampMotDePasse, BordureChamp,
+                            Tableaux, RenduBadge, Badge, Ton, OngletsSegmentes, CarteIndicateur, Icone
   ui/panels/                one JPanel per module (TableauDeBordPanel, MedicamentPanel, FournisseurPanel,
                             ClientPanel, VentePanel, StockPanel, UtilisateurPanel)
 ```
@@ -95,12 +98,13 @@ Conventions:
 - The UI **never** uses JDBC directly: panels call DAOs only.
 - UI shows errors with `JOptionPane`: RegleGestionException → its message as a warning; DAOException → "Erreur de base de données" + short message.
 - Swing work on the EDT (`SwingUtilities.invokeLater`). Keep layouts simple (BorderLayout, GridBagLayout, JTable + form). No GUI builder code.
-- Tabs by role: ADMIN = Tableau de bord, Médicaments, Fournisseurs, Clients, Ventes, Stocks, Utilisateurs. PHARMACIEN = Médicaments (read-only), Clients, Ventes, Stocks (read-only).
+- Pages by role (sidebar order): ADMIN = Tableau de bord, Ventes, Médicaments, Stocks, Clients, Fournisseurs, Utilisateurs. PHARMACIEN = Ventes, Médicaments (read-only), Stocks (read-only), Clients.
 
 ## Phases and file ownership
 
 - **Phase 2 (foundation, one agent)**: config, util, model, all DAOs (including the sale and delivery transactions), LoginFrame, MainFrame with role-based tabs + "Déconnexion", one **placeholder** panel per module, and `src/pharmacie/test/TestPhase2.java` (console checks against the real DB that clean up after themselves).
   Done when: admin logs in and sees 7 tabs; pharmacien sees 4; ancien is refused ("compte désactivé"); a wrong password shows a message, not a crash; Déconnexion returns to login; a sale above stock is refused and stock is unchanged; a valid sale decreases stock; TestPhase2 passes.
+- **Phase 4 (UI polish)**: apply the design system below to every panel without changing any behaviour, DAO call or business rule.
 - **Phase 3 (screens, 3 agents in parallel, each in its own git worktree and branch)**: each agent edits **only its own panel files** in `ui/panels/`, and puts any new helper classes in **its own package** (A: `pharmacie.ui.referentiels`, B: `pharmacie.ui.ventes`, C: `pharmacie.ui.stock`). It must not change DAOs, models, util, MainFrame, CLAUDE.md or the SQL. If a DAO method is missing or wrong, **stop and tell the user** instead of editing the DAO.
   - Agent A: MedicamentPanel, FournisseurPanel, ClientPanel (CRUD + search + JTable)
   - Agent B: VentePanel (new sale, lines, live total, sale history and detail)
@@ -118,7 +122,23 @@ Same look everywhere so the app feels like one program:
 - Each panel reloads its data every time its tab becomes visible (`addComponentListener` → `componentShown`), so a sale made in Ventes shows up at once in Stocks and the dashboard.
 - Role rules (RG03): PHARMACIEN sees Médicaments and Stocks **read-only** (hide the form buttons and the new-delivery form when `!Session.estAdmin()`). The user id for a sale or delivery always comes from `Session.getUtilisateur()`.
 - Errors: `RegleGestionException` → `JOptionPane` warning with its message; `DAOException` → error dialog "Erreur de base de données" + message. Never let an exception reach the console.
-- Labels and messages in French, no emoji, default Swing look & feel set in Main.
+- Labels and messages in French, no emoji. `Main` calls `Theme.installer()` before the first window.
+
+## Design system (`pharmacie.ui.theme`): use it on every screen
+
+Look: light gray workspace, white rounded cards, green accent (pharmacy), clean tables with colored status badges. Never hard-code colors or fonts in a panel: take them from `Theme`.
+
+- **Page layout**: each module panel is a page shown by `MainFrame` (the top bar already shows the page title, so panels have NO title of their own). The panel itself is transparent (`setOpaque(false)`) on the gray `Theme.FOND` background, and puts its content in one or more `Carte` (white rounded card). Space between cards: 16 px.
+- **Sub-tabs**: use `OngletsSegmentes` instead of `JTabbedPane` (same methods: `addTab`, `getSelectedIndex`, `setSelectedIndex`, `addChangeListener`).
+- **Toolbar** (first row inside the main card): `ChampTexte("Rechercher par …", true)` (search icon, about 320 px wide) + `Bouton("Rechercher")` on the left; action buttons on the right.
+- **Buttons**: `Bouton(texte, Bouton.Style.X, Icone.Type.Y)`. PRIMAIRE = the one main action of the area (Ajouter, Valider la vente, Enregistrer), SECONDAIRE = Modifier, Vider, Annuler, Rechercher, DANGER = Supprimer, Retirer, DISCRET = minor links. One PRIMAIRE per area.
+- **Tables**: keep the existing models, then `Tableaux.styliser(table)`, put it in `Tableaux.defilement(table)`, set column widths with `Tableaux.largeur` so nothing important is cut, the name column in bold (`Tableaux.colonneEnGras`), amounts and quantities right-aligned (`Tableaux.alignerADroite`).
+- **Status columns as badges**: `Tableaux.colonneBadge(table, col)`; give badge columns at least 130 px. Use these exact words so colors are consistent (see `Ton.pour`): "En stock" (green), "Stock faible" (red), "Périmé" (red), "N jours" for expiry (amber), "Actif" / "Inactif", "Client de passage" (gray), role "Administrateur" (blue) / "Pharmacien" (gray).
+- **Forms**: inside a Carte, GridBagLayout, label above or left of each field (12.5 bold, `Theme.TEXTE`), fields = `ChampTexte` / `ChampMotDePasse`, or `BordureChamp.appliquer(field)` on an existing JTextField, JSpinner editor or similar. Combo boxes: just set `Theme.police(13f)` and preferred height `Theme.HAUTEUR_CONTROLE`.
+- **Dashboard**: `CarteIndicateur(libellé, Icone.Type, couleur)` + `setValeur(...)`; the revenue card must be wide enough for "1 656.00 DH" (give it more weight in a GridBagLayout). Alert lists in Cartes with a title row: `Icone` ALERTE + bold title + `Badge(count, Ton)`.
+- **Totals** (sale cart, delivery): right-aligned, label in `TEXTE_SECONDAIRE`, amount in `Theme.police(Font.BOLD, 22f)`.
+- **Icons**: `new Icone(Icone.Type.X, size, color)`; never load image files.
+- **Dialogs** stay `JOptionPane` (already themed by `Theme.installer()`).
 
 ## Rules for the agent
 

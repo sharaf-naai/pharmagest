@@ -1,6 +1,7 @@
 package pharmacie.ui.panels;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
 import java.awt.event.ComponentAdapter;
@@ -9,16 +10,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
 import pharmacie.dao.CategorieDAO;
@@ -26,6 +21,12 @@ import pharmacie.dao.MedicamentDAO;
 import pharmacie.model.Categorie;
 import pharmacie.model.Medicament;
 import pharmacie.ui.OutilsEcran;
+import pharmacie.ui.theme.Bouton;
+import pharmacie.ui.theme.Carte;
+import pharmacie.ui.theme.ChampTexte;
+import pharmacie.ui.theme.Icone;
+import pharmacie.ui.theme.Tableaux;
+import pharmacie.ui.theme.Theme;
 import pharmacie.util.DAOException;
 import pharmacie.util.RegleGestionException;
 import pharmacie.util.Session;
@@ -41,34 +42,46 @@ public class MedicamentPanel extends JPanel {
     private final DefaultTableModel modele = OutilsEcran.creerModele(
             "N°", "Nom", "Forme", "Dosage", "Catégorie", "Prix", "Stock", "Seuil");
     private final JTable table = OutilsEcran.creerTable(modele);
-    private final JTextField champRecherche = new JTextField(20);
+    private final ChampTexte champRecherche = new ChampTexte("Rechercher par N° ou partie du nom", true);
 
-    private final JTextField champNom = new JTextField(15);
-    private final JTextField champForme = new JTextField(15);
-    private final JTextField champDosage = new JTextField(15);
-    private final JTextField champPrix = new JTextField(15);
-    private final JTextField champSeuil = new JTextField(15);
-    private final JTextField champStock = new JTextField(15);
+    private final ChampTexte champNom = new ChampTexte();
+    private final ChampTexte champForme = new ChampTexte();
+    private final ChampTexte champDosage = new ChampTexte();
+    private final ChampTexte champPrix = new ChampTexte();
+    private final ChampTexte champSeuil = new ChampTexte();
+    private final ChampTexte champStock = new ChampTexte();
     private final JComboBox<Categorie> listeCategories = new JComboBox<>();
 
     private List<Medicament> medicaments = new ArrayList<>(); // dans l'ordre des lignes du tableau
     private Medicament medicamentSelectionne;                 // null = aucun médicament choisi
 
     public MedicamentPanel() {
-        super(new BorderLayout(10, 10));
-        setBorder(new EmptyBorder(10, 10, 10, 10));
+        super(new BorderLayout(16, 16));
+        setOpaque(false); // le fond gris vient de MainFrame
 
         // Barre de recherche (Entrée dans le champ = Rechercher)
-        JPanel barreRecherche = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton boutonRechercher = new JButton("Rechercher");
-        JButton boutonToutAfficher = new JButton("Tout afficher");
-        barreRecherche.add(new JLabel("N° ou partie du nom :"));
+        champRecherche.setPreferredSize(new Dimension(320, Theme.HAUTEUR_CONTROLE));
+        JPanel barreRecherche = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        barreRecherche.setOpaque(false);
+        Bouton boutonRechercher = new Bouton("Rechercher", Bouton.Style.SECONDAIRE, Icone.Type.RECHERCHE);
+        Bouton boutonToutAfficher = new Bouton("Tout afficher", Bouton.Style.DISCRET);
         barreRecherche.add(champRecherche);
         barreRecherche.add(boutonRechercher);
         barreRecherche.add(boutonToutAfficher);
 
-        add(barreRecherche, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        // Tableau : nom en gras, nombres à droite
+        Tableaux.styliser(table);
+        Tableaux.largeur(table, 0, 50);
+        Tableaux.largeur(table, 1, 200);
+        Tableaux.colonneEnGras(table, 1);
+        for (int col = 5; col <= 7; col++) {
+            Tableaux.alignerADroite(table, col);
+        }
+
+        Carte carteListe = new Carte(new BorderLayout(0, 12));
+        carteListe.add(barreRecherche, BorderLayout.NORTH);
+        carteListe.add(Tableaux.defilement(table), BorderLayout.CENTER);
+        add(carteListe, BorderLayout.CENTER);
 
         champRecherche.addActionListener(e -> rafraichir());
         boutonRechercher.addActionListener(e -> rafraichir());
@@ -98,9 +111,11 @@ public class MedicamentPanel extends JPanel {
         // Le stock est affiché mais non modifiable : il ne change que par les ventes et les approvisionnements
         champStock.setEditable(false);
         champStock.setText("0");
+        champNom.setColumns(16);
+        OutilsEcran.styliserListe(listeCategories);
 
         JPanel formulaire = new JPanel(new GridBagLayout());
-        formulaire.setBorder(new TitledBorder("Fiche médicament"));
+        formulaire.setOpaque(false);
         OutilsEcran.ajouterChamp(formulaire, 0, "Nom * :", champNom);
         OutilsEcran.ajouterChamp(formulaire, 1, "Forme :", champForme);
         OutilsEcran.ajouterChamp(formulaire, 2, "Dosage :", champDosage);
@@ -109,11 +124,12 @@ public class MedicamentPanel extends JPanel {
         OutilsEcran.ajouterChamp(formulaire, 5, "Catégorie * :", listeCategories);
         OutilsEcran.ajouterChamp(formulaire, 6, "Stock (lecture seule) :", champStock);
 
-        JPanel boutons = new JPanel(new FlowLayout());
-        JButton boutonAjouter = new JButton("Ajouter");
-        JButton boutonModifier = new JButton("Modifier");
-        JButton boutonSupprimer = new JButton("Supprimer");
-        JButton boutonVider = new JButton("Vider");
+        JPanel boutons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 12));
+        boutons.setOpaque(false);
+        Bouton boutonAjouter = new Bouton("Ajouter", Bouton.Style.PRIMAIRE, Icone.Type.AJOUTER);
+        Bouton boutonModifier = new Bouton("Modifier", Bouton.Style.SECONDAIRE, Icone.Type.MODIFIER);
+        Bouton boutonSupprimer = new Bouton("Supprimer", Bouton.Style.DANGER, Icone.Type.SUPPRIMER);
+        Bouton boutonVider = new Bouton("Vider", Bouton.Style.SECONDAIRE);
         boutons.add(boutonAjouter);
         boutons.add(boutonModifier);
         boutons.add(boutonSupprimer);
@@ -129,10 +145,8 @@ public class MedicamentPanel extends JPanel {
         boutonSupprimer.addActionListener(e -> supprimer());
         boutonVider.addActionListener(e -> vider());
 
-        JPanel droite = new JPanel(new BorderLayout());
-        droite.add(formulaire, BorderLayout.NORTH);
-        droite.add(boutons, BorderLayout.CENTER);
-        return droite;
+        // Carte de droite : titre de la fiche, champs, puis boutons
+        return OutilsEcran.carteFormulaire("Fiche médicament", formulaire, boutons);
     }
 
     /** RG07 : la liste déroulante propose les catégories de la base. */

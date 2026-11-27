@@ -12,24 +12,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
 import pharmacie.dao.UtilisateurDAO;
 import pharmacie.model.Role;
 import pharmacie.model.Utilisateur;
 import pharmacie.ui.EcranOutils;
+import pharmacie.ui.OutilsEcran;
+import pharmacie.ui.theme.Bouton;
+import pharmacie.ui.theme.Carte;
+import pharmacie.ui.theme.ChampMotDePasse;
+import pharmacie.ui.theme.ChampTexte;
+import pharmacie.ui.theme.Icone;
+import pharmacie.ui.theme.Tableaux;
 import pharmacie.util.DAOException;
 import pharmacie.util.RegleGestionException;
 import pharmacie.util.Session;
@@ -43,32 +43,40 @@ public class UtilisateurPanel extends JPanel {
     private List<Utilisateur> utilisateurs = new ArrayList<>(); // même ordre que les lignes du tableau
 
     // Formulaire de création
-    private final JTextField champLogin = new JTextField(15);
-    private final JTextField champNom = new JTextField(15);
+    private final ChampTexte champLogin = new ChampTexte();
+    private final ChampTexte champNom = new ChampTexte();
     private final JComboBox<Role> comboRole = new JComboBox<>(Role.values());
-    private final JPasswordField champMotDePasse = new JPasswordField(15);
-    private final JPasswordField champConfirmation = new JPasswordField(15);
+    private final ChampMotDePasse champMotDePasse = new ChampMotDePasse("");
+    private final ChampMotDePasse champConfirmation = new ChampMotDePasse("");
 
     public UtilisateurPanel() {
-        super(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        super(new BorderLayout(16, 16));
+        setOpaque(false); // le fond gris vient de MainFrame
 
-        // Boutons qui agissent sur le compte sélectionné
-        JButton boutonRole = new JButton("Changer le rôle");
-        JButton boutonActif = new JButton("Activer / Désactiver");
-        JButton boutonMotDePasse = new JButton("Réinitialiser le mot de passe");
+        // Tableau : login en gras, rôle et état en badges
+        Tableaux.styliser(table);
+        Tableaux.colonneEnGras(table, 0);
+        Tableaux.colonneBadge(table, 2);
+        Tableaux.largeur(table, 2, 140);
+        Tableaux.colonneBadge(table, 3);
+        Tableaux.largeur(table, 3, 130);
+
+        // Boutons qui agissent sur le compte sélectionné (barre d'outils en haut de la carte)
+        Bouton boutonRole = new Bouton("Changer le rôle", Bouton.Style.SECONDAIRE, Icone.Type.MODIFIER);
+        Bouton boutonActif = new Bouton("Activer / Désactiver", Bouton.Style.SECONDAIRE);
+        Bouton boutonMotDePasse = new Bouton("Réinitialiser le mot de passe", Bouton.Style.SECONDAIRE);
         boutonRole.addActionListener(e -> changerRole());
         boutonActif.addActionListener(e -> basculerActif());
         boutonMotDePasse.addActionListener(e -> reinitialiserMotDePasse());
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        actions.setOpaque(false);
         actions.add(boutonRole);
         actions.add(boutonActif);
         actions.add(boutonMotDePasse);
 
-        JPanel centre = new JPanel(new BorderLayout());
-        centre.add(new JScrollPane(table), BorderLayout.CENTER);
-        centre.add(actions, BorderLayout.SOUTH);
+        Carte centre = new Carte(new BorderLayout(0, 12));
+        centre.add(actions, BorderLayout.NORTH);
+        centre.add(Tableaux.defilement(table), BorderLayout.CENTER);
 
         add(centre, BorderLayout.CENTER);
         add(formulaireCreation(), BorderLayout.EAST);
@@ -83,8 +91,10 @@ public class UtilisateurPanel extends JPanel {
     }
 
     private JPanel formulaireCreation() {
+        champLogin.setColumns(15);
+        OutilsEcran.styliserListe(comboRole);
         JPanel f = new JPanel(new GridBagLayout());
-        f.setBorder(BorderFactory.createTitledBorder("Nouveau compte"));
+        f.setOpaque(false);
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(4, 4, 4, 4);
         c.anchor = GridBagConstraints.WEST;
@@ -93,15 +103,18 @@ public class UtilisateurPanel extends JPanel {
         for (int i = 0; i < libelles.length; i++) {
             c.gridy = i;
             c.gridx = 0;
-            f.add(new JLabel(libelles[i]), c);
+            c.fill = GridBagConstraints.NONE;
+            f.add(OutilsEcran.etiquette(libelles[i]), c);
             c.gridx = 1;
+            c.fill = GridBagConstraints.HORIZONTAL; // tous les champs à la même largeur
             f.add(champs[i], c);
         }
-        JButton boutonCreer = new JButton("Créer le compte");
+        Bouton boutonCreer = new Bouton("Créer le compte", Bouton.Style.PRIMAIRE, Icone.Type.AJOUTER);
         boutonCreer.addActionListener(e -> creer());
-        c.gridy = libelles.length;
-        f.add(boutonCreer, c);
-        return f;
+        JPanel boutons = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 12));
+        boutons.setOpaque(false);
+        boutons.add(boutonCreer);
+        return OutilsEcran.carteFormulaire("Nouveau compte", f, boutons);
     }
 
     private void charger() {
@@ -109,7 +122,9 @@ public class UtilisateurPanel extends JPanel {
             utilisateurs = utilisateurDAO.lister();
             modele.setRowCount(0);
             for (Utilisateur u : utilisateurs) {
-                modele.addRow(new Object[] {u.getLogin(), u.getNomComplet(), u.getRole(), u.isActif() ? "Oui" : "Non"});
+                // Mots exacts des badges : bleu « Administrateur », gris « Pharmacien », vert/rouge Actif/Inactif
+                String role = u.getRole() == Role.ADMIN ? "Administrateur" : "Pharmacien";
+                modele.addRow(new Object[] {u.getLogin(), u.getNomComplet(), role, u.isActif() ? "Actif" : "Inactif"});
             }
         } catch (DAOException e) {
             EcranOutils.afficherErreur(this, e);
@@ -199,12 +214,13 @@ public class UtilisateurPanel extends JPanel {
         if (u == null) {
             return;
         }
-        JPasswordField mdp = new JPasswordField(15);
-        JPasswordField confirmation = new JPasswordField(15);
-        JPanel saisie = new JPanel(new GridLayout(2, 2, 4, 4));
-        saisie.add(new JLabel("Nouveau mot de passe :"));
+        ChampMotDePasse mdp = new ChampMotDePasse("");
+        ChampMotDePasse confirmation = new ChampMotDePasse("");
+        mdp.setColumns(15);
+        JPanel saisie = new JPanel(new GridLayout(2, 2, 8, 8));
+        saisie.add(OutilsEcran.etiquette("Nouveau mot de passe :"));
         saisie.add(mdp);
-        saisie.add(new JLabel("Confirmation :"));
+        saisie.add(OutilsEcran.etiquette("Confirmation :"));
         saisie.add(confirmation);
         int choix = JOptionPane.showConfirmDialog(this, saisie, "Mot de passe de " + u.getLogin(),
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);

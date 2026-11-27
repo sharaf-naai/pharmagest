@@ -1,6 +1,7 @@
 package pharmacie.ui.panels;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
 import java.awt.event.ComponentAdapter;
@@ -8,20 +9,20 @@ import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
 import pharmacie.dao.ClientDAO;
 import pharmacie.model.Client;
 import pharmacie.ui.OutilsEcran;
+import pharmacie.ui.theme.Bouton;
+import pharmacie.ui.theme.Carte;
+import pharmacie.ui.theme.ChampTexte;
+import pharmacie.ui.theme.Icone;
+import pharmacie.ui.theme.Tableaux;
+import pharmacie.ui.theme.Theme;
 import pharmacie.util.DAOException;
 import pharmacie.util.RegleGestionException;
 
@@ -32,54 +33,61 @@ public class ClientPanel extends JPanel {
 
     private final DefaultTableModel modele = OutilsEcran.creerModele("N°", "Nom", "Prénom", "Téléphone", "Adresse");
     private final JTable table = OutilsEcran.creerTable(modele);
-    private final JTextField champRecherche = new JTextField(20);
+    private final ChampTexte champRecherche = new ChampTexte("Rechercher par nom, prénom ou téléphone", true);
 
-    private final JTextField champNom = new JTextField(15);
-    private final JTextField champPrenom = new JTextField(15);
-    private final JTextField champTelephone = new JTextField(15);
-    private final JTextField champAdresse = new JTextField(15);
+    private final ChampTexte champNom = new ChampTexte();
+    private final ChampTexte champPrenom = new ChampTexte();
+    private final ChampTexte champTelephone = new ChampTexte();
+    private final ChampTexte champAdresse = new ChampTexte();
 
     private List<Client> clients = new ArrayList<>(); // clients affichés, dans l'ordre des lignes du tableau
     private Client clientSelectionne;                 // null = aucun client choisi dans le tableau
 
     public ClientPanel() {
-        super(new BorderLayout(10, 10));
-        setBorder(new EmptyBorder(10, 10, 10, 10));
+        super(new BorderLayout(16, 16));
+        setOpaque(false); // le fond gris vient de MainFrame
 
         // Barre de recherche (Entrée dans le champ = Rechercher)
-        JPanel barreRecherche = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton boutonRechercher = new JButton("Rechercher");
-        JButton boutonToutAfficher = new JButton("Tout afficher");
-        barreRecherche.add(new JLabel("Nom, prénom ou téléphone :"));
+        champRecherche.setPreferredSize(new Dimension(320, Theme.HAUTEUR_CONTROLE));
+        JPanel barreRecherche = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        barreRecherche.setOpaque(false);
+        Bouton boutonRechercher = new Bouton("Rechercher", Bouton.Style.SECONDAIRE, Icone.Type.RECHERCHE);
+        Bouton boutonToutAfficher = new Bouton("Tout afficher", Bouton.Style.DISCRET);
         barreRecherche.add(champRecherche);
         barreRecherche.add(boutonRechercher);
         barreRecherche.add(boutonToutAfficher);
 
+        // Tableau : nom en gras
+        Tableaux.styliser(table);
+        Tableaux.largeur(table, 0, 50);
+        Tableaux.colonneEnGras(table, 1);
+        Tableaux.largeur(table, 4, 220);
+
         // Formulaire de saisie
+        champNom.setColumns(16);
         JPanel formulaire = new JPanel(new GridBagLayout());
-        formulaire.setBorder(new TitledBorder("Fiche client"));
+        formulaire.setOpaque(false);
         OutilsEcran.ajouterChamp(formulaire, 0, "Nom * :", champNom);
         OutilsEcran.ajouterChamp(formulaire, 1, "Prénom * :", champPrenom);
         OutilsEcran.ajouterChamp(formulaire, 2, "Téléphone :", champTelephone);
         OutilsEcran.ajouterChamp(formulaire, 3, "Adresse :", champAdresse);
 
-        JPanel boutons = new JPanel(new FlowLayout());
-        JButton boutonAjouter = new JButton("Ajouter");
-        JButton boutonModifier = new JButton("Modifier");
-        JButton boutonSupprimer = new JButton("Supprimer");
-        JButton boutonVider = new JButton("Vider");
+        JPanel boutons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 12));
+        boutons.setOpaque(false);
+        Bouton boutonAjouter = new Bouton("Ajouter", Bouton.Style.PRIMAIRE, Icone.Type.AJOUTER);
+        Bouton boutonModifier = new Bouton("Modifier", Bouton.Style.SECONDAIRE, Icone.Type.MODIFIER);
+        Bouton boutonSupprimer = new Bouton("Supprimer", Bouton.Style.DANGER, Icone.Type.SUPPRIMER);
+        Bouton boutonVider = new Bouton("Vider", Bouton.Style.SECONDAIRE);
         boutons.add(boutonAjouter);
         boutons.add(boutonModifier);
         boutons.add(boutonSupprimer);
         boutons.add(boutonVider);
 
-        JPanel droite = new JPanel(new BorderLayout());
-        droite.add(formulaire, BorderLayout.NORTH);
-        droite.add(boutons, BorderLayout.CENTER);
-
-        add(barreRecherche, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
-        add(droite, BorderLayout.EAST);
+        Carte carteListe = new Carte(new BorderLayout(0, 12));
+        carteListe.add(barreRecherche, BorderLayout.NORTH);
+        carteListe.add(Tableaux.defilement(table), BorderLayout.CENTER);
+        add(carteListe, BorderLayout.CENTER);
+        add(OutilsEcran.carteFormulaire("Fiche client", formulaire, boutons), BorderLayout.EAST);
 
         // Événements
         champRecherche.addActionListener(e -> rafraichir());

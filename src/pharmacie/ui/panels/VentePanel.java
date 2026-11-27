@@ -12,22 +12,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 
 import pharmacie.dao.ClientDAO;
 import pharmacie.dao.MedicamentDAO;
@@ -36,6 +31,15 @@ import pharmacie.model.Client;
 import pharmacie.model.LigneVente;
 import pharmacie.model.Medicament;
 import pharmacie.model.Vente;
+import pharmacie.ui.OutilsEcran;
+import pharmacie.ui.theme.Bouton;
+import pharmacie.ui.theme.Carte;
+import pharmacie.ui.theme.ChampTexte;
+import pharmacie.ui.theme.Icone;
+import pharmacie.ui.theme.OngletsSegmentes;
+import pharmacie.ui.theme.RenduBadge;
+import pharmacie.ui.theme.Tableaux;
+import pharmacie.ui.theme.Theme;
 import pharmacie.util.DAOException;
 import pharmacie.util.RegleGestionException;
 import pharmacie.util.Session;
@@ -53,7 +57,7 @@ public class VentePanel extends JPanel {
     // --- Onglet « Nouvelle vente » ---
     private final JComboBox<Object> comboClient = new JComboBox<>(); // contient le texte « Client de passage » puis des Client
     private final JComboBox<Medicament> comboMedicament = new JComboBox<>();
-    private final JTextField champQuantite = new JTextField("1", 5);
+    private final ChampTexte champQuantite = new ChampTexte();
     private final List<LigneVente> panier = new ArrayList<>();
     private final DefaultTableModel modelePanier =
             modeleNonEditable("Médicament", "Prix unitaire", "Quantité", "Sous-total");
@@ -71,7 +75,8 @@ public class VentePanel extends JPanel {
 
     public VentePanel() {
         super(new BorderLayout());
-        JTabbedPane sousOnglets = new JTabbedPane();
+        setOpaque(false); // le fond gris vient de MainFrame
+        OngletsSegmentes sousOnglets = new OngletsSegmentes();
         sousOnglets.addTab("Nouvelle vente", construireNouvelleVente());
         sousOnglets.addTab("Historique", construireHistorique());
         // Recharger l'historique chaque fois qu'on ouvre son onglet
@@ -114,30 +119,53 @@ public class VentePanel extends JPanel {
             }
         });
 
-        JPanel haut = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        haut.add(new JLabel("Client :"));
+        OutilsEcran.styliserListe(comboClient);
+        OutilsEcran.styliserListe(comboMedicament);
+        champQuantite.setText("1");
+        champQuantite.setColumns(4);
+
+        JPanel haut = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        haut.setOpaque(false);
+        haut.add(OutilsEcran.etiquette("Client"));
         haut.add(comboClient);
-        haut.add(new JLabel("   Médicament :"));
+        haut.add(OutilsEcran.etiquette("   Médicament"));
         haut.add(comboMedicament);
-        haut.add(new JLabel("Quantité :"));
+        haut.add(OutilsEcran.etiquette("Quantité"));
         haut.add(champQuantite);
-        JButton boutonAjouter = new JButton("Ajouter");
+        Bouton boutonAjouter = new Bouton("Ajouter", Bouton.Style.SECONDAIRE, Icone.Type.AJOUTER);
         haut.add(boutonAjouter);
 
-        tablePanier.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        // Panier : nom en gras, montants et quantités à droite
+        Tableaux.styliser(tablePanier);
+        Tableaux.colonneEnGras(tablePanier, 0);
+        Tableaux.largeur(tablePanier, 0, 260);
+        for (int col = 1; col <= 3; col++) {
+            Tableaux.alignerADroite(tablePanier, col);
+        }
 
-        labelTotal.setFont(labelTotal.getFont().deriveFont(Font.BOLD, 22f));
-        JButton boutonRetirer = new JButton("Retirer");
-        JButton boutonValider = new JButton("Valider la vente");
-        JButton boutonAnnuler = new JButton("Annuler");
-        JPanel boutons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Total : libellé gris + montant en gros, à droite (RG19)
+        JLabel libelleTotal = new JLabel("Total");
+        libelleTotal.setFont(Theme.police(14f));
+        libelleTotal.setForeground(Theme.TEXTE_SECONDAIRE);
+        labelTotal.setFont(Theme.police(Font.BOLD, 22f));
+        labelTotal.setForeground(Theme.TEXTE);
+        JPanel zoneTotal = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        zoneTotal.setOpaque(false);
+        zoneTotal.add(libelleTotal);
+        zoneTotal.add(labelTotal);
+
+        Bouton boutonRetirer = new Bouton("Retirer", Bouton.Style.DANGER, Icone.Type.SUPPRIMER);
+        Bouton boutonValider = new Bouton("Valider la vente", Bouton.Style.PRIMAIRE, Icone.Type.VALIDER);
+        Bouton boutonAnnuler = new Bouton("Annuler", Bouton.Style.SECONDAIRE);
+        JPanel boutons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        boutons.setOpaque(false);
         boutons.add(boutonRetirer);
         boutons.add(boutonValider);
         boutons.add(boutonAnnuler);
         JPanel bas = new JPanel(new BorderLayout());
+        bas.setOpaque(false);
         bas.add(boutons, BorderLayout.WEST);
-        bas.add(labelTotal, BorderLayout.EAST);
-        bas.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 10));
+        bas.add(zoneTotal, BorderLayout.EAST);
 
         // Événements
         boutonAjouter.addActionListener(e -> ajouterLigne());
@@ -146,9 +174,9 @@ public class VentePanel extends JPanel {
         boutonValider.addActionListener(e -> validerVente());
         boutonAnnuler.addActionListener(e -> viderPanier());
 
-        JPanel panneau = new JPanel(new BorderLayout());
+        Carte panneau = new Carte(new BorderLayout(0, 16));
         panneau.add(haut, BorderLayout.NORTH);
-        panneau.add(new JScrollPane(tablePanier), BorderLayout.CENTER);
+        panneau.add(Tableaux.defilement(tablePanier), BorderLayout.CENTER);
         panneau.add(bas, BorderLayout.SOUTH);
         return panneau;
     }
@@ -254,7 +282,7 @@ public class VentePanel extends JPanel {
             modelePanier.addRow(new Object[] {l.getNomMedicament(), enDH(l.getPrixUnitaireVente()),
                     l.getQuantiteVendue(), enDH(l.getSousTotal())});
         }
-        labelTotal.setText("Total : " + enDH(calculerTotalPanier()));
+        labelTotal.setText(enDH(calculerTotalPanier())); // le libellé « Total » est à côté
     }
 
     /** RG19 : total = somme des quantités × prix unitaires, calculé et jamais saisi. */
@@ -271,7 +299,7 @@ public class VentePanel extends JPanel {
             avertir("Le panier est vide : ajoutez au moins un médicament.");
             return;
         }
-        int choix = JOptionPane.showConfirmDialog(this, "Confirmer la vente (" + labelTotal.getText() + ") ?",
+        int choix = JOptionPane.showConfirmDialog(this, "Confirmer la vente (Total : " + labelTotal.getText() + ") ?",
                 "Valider la vente", JOptionPane.YES_NO_OPTION);
         if (choix != JOptionPane.YES_OPTION) {
             return;
@@ -296,7 +324,25 @@ public class VentePanel extends JPanel {
     // ===================== Historique =====================
 
     private JSplitPane construireHistorique() {
-        tableVentes.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        Tableaux.styliser(tableVentes);
+        Tableaux.largeur(tableVentes, 0, 50);
+        Tableaux.largeur(tableVentes, 2, 170);
+        Tableaux.alignerADroite(tableVentes, 4);
+        // Colonne Client : badge gris pour « Client de passage », texte normal pour un vrai client
+        TableCellRenderer normal = tableVentes.getDefaultRenderer(Object.class);
+        RenduBadge badge = new RenduBadge();
+        tableVentes.getColumnModel().getColumn(2).setCellRenderer((t, valeur, sel, focus, ligne, col) ->
+                (CLIENT_DE_PASSAGE.equals(valeur) ? badge : normal)
+                        .getTableCellRendererComponent(t, valeur, sel, focus, ligne, col));
+
+        JTable tableLignes = new JTable(modeleLignes);
+        Tableaux.styliser(tableLignes);
+        Tableaux.colonneEnGras(tableLignes, 0);
+        Tableaux.largeur(tableLignes, 0, 260);
+        for (int col = 1; col <= 3; col++) {
+            Tableaux.alignerADroite(tableLignes, col);
+        }
+
         // Clic sur une vente : afficher son détail en dessous
         tableVentes.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -304,16 +350,23 @@ public class VentePanel extends JPanel {
             }
         });
 
-        labelTotalDetail.setFont(labelTotalDetail.getFont().deriveFont(Font.BOLD, 16f));
+        labelTotalDetail.setFont(Theme.police(Font.BOLD, 16f));
+        labelTotalDetail.setForeground(Theme.TEXTE);
         labelTotalDetail.setHorizontalAlignment(SwingConstants.RIGHT);
-        labelTotalDetail.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 10));
-        JPanel detail = new JPanel(new BorderLayout());
-        detail.setBorder(BorderFactory.createTitledBorder("Détail de la vente sélectionnée"));
-        detail.add(new JScrollPane(new JTable(modeleLignes)), BorderLayout.CENTER);
+        Carte detail = new Carte(new BorderLayout(0, 12));
+        detail.add(OutilsEcran.titreCarte("Détail de la vente sélectionnée"), BorderLayout.NORTH);
+        detail.add(Tableaux.defilement(tableLignes), BorderLayout.CENTER);
         detail.add(labelTotalDetail, BorderLayout.SOUTH);
 
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(tableVentes), detail);
+        Carte liste = new Carte();
+        liste.add(Tableaux.defilement(tableVentes), BorderLayout.CENTER);
+
+        // Séparateur invisible de 16 px entre les deux cartes
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, liste, detail);
         split.setResizeWeight(0.6);
+        split.setOpaque(false);
+        split.setBorder(null);
+        split.setDividerSize(16);
         return split;
     }
 

@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 
 import pharmacie.config.DatabaseConnection;
@@ -119,12 +118,12 @@ public class TestPhase2 {
             return;
         }
         Session.ouvrir(utilisateurDAO.authentifier("admin", "admin123"));
-        verifier("admin voit les 7 onglets", titresOnglets().equals(List.of("Tableau de bord", "Médicaments",
-                "Fournisseurs", "Clients", "Ventes", "Stocks", "Utilisateurs")));
+        verifier("admin voit les 7 pages", titresOnglets().equals(List.of("Tableau de bord", "Ventes",
+                "Médicaments", "Stocks", "Clients", "Fournisseurs", "Utilisateurs")));
 
         Session.ouvrir(utilisateurDAO.authentifier("pharmacien", "pharma123"));
-        verifier("pharmacien voit 4 onglets", titresOnglets().equals(List.of("Médicaments", "Clients",
-                "Ventes", "Stocks")));
+        verifier("pharmacien voit 4 pages", titresOnglets().equals(List.of("Ventes", "Médicaments",
+                "Stocks", "Clients")));
 
         // Déconnexion : la session est vidée et l'écran de connexion réapparaît
         boolean[] loginAffiche = {false};
@@ -319,10 +318,7 @@ public class TestPhase2 {
         List<String> titres = new ArrayList<>();
         SwingUtilities.invokeAndWait(() -> {
             MainFrame f = new MainFrame();
-            JTabbedPane onglets = f.getOnglets();
-            for (int i = 0; i < onglets.getTabCount(); i++) {
-                titres.add(onglets.getTitleAt(i));
-            }
+            titres.addAll(f.getTitresPages());
             f.dispose();
         });
         return titres;
