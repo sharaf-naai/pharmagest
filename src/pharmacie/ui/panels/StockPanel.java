@@ -35,6 +35,7 @@ import pharmacie.model.LigneApprovisionnement;
 import pharmacie.model.Medicament;
 import pharmacie.ui.EcranOutils;
 import pharmacie.ui.OutilsEcran;
+import pharmacie.ui.theme.ListeDeroulante;
 import pharmacie.ui.theme.Bouton;
 import pharmacie.ui.theme.Carte;
 import pharmacie.ui.theme.ChampTexte;
@@ -67,10 +68,10 @@ public class StockPanel extends JPanel {
     private final JCheckBox caseStockFaible = new JCheckBox("Stock faible uniquement");
 
     // --- Approvisionnement
-    private final JComboBox<Fournisseur> comboFournisseur = new JComboBox<>();
+    private final JComboBox<Fournisseur> comboFournisseur = new ListeDeroulante<>(240);
     private final ChampTexte champDate = champ(10);
     private final ChampTexte champReference = champ(10);
-    private final JComboBox<Medicament> comboMedicament = new JComboBox<>();
+    private final JComboBox<Medicament> comboMedicament = new ListeDeroulante<>(260);
     private final ChampTexte champQuantite = champ(5);
     private final ChampTexte champPrixAchat = champ(7);
     private final ChampTexte champLot = champ(8);

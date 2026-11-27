@@ -101,8 +101,9 @@ public final class OutilsEcran {
 
     /** Liste déroulante à la police et à la hauteur des autres champs. */
     public static void styliserListe(JComboBox<?> liste) {
+        // La taille est gérée par ListeDeroulante (largeur selon le contenu, hauteur des champs).
+        // Ne pas figer la largeur ici : la liste est encore vide à ce moment-là.
         liste.setFont(Theme.police(13f));
-        liste.setPreferredSize(new Dimension(liste.getPreferredSize().width, Theme.HAUTEUR_CONTROLE));
     }
 
     /** Texte saisi sans espaces autour, ou null si le champ est vide (colonne facultative). */

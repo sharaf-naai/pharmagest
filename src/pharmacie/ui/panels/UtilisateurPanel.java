@@ -24,6 +24,7 @@ import pharmacie.model.Role;
 import pharmacie.model.Utilisateur;
 import pharmacie.ui.EcranOutils;
 import pharmacie.ui.OutilsEcran;
+import pharmacie.ui.theme.ListeDeroulante;
 import pharmacie.ui.theme.Bouton;
 import pharmacie.ui.theme.Carte;
 import pharmacie.ui.theme.ChampMotDePasse;
@@ -45,7 +46,7 @@ public class UtilisateurPanel extends JPanel {
     // Formulaire de création
     private final ChampTexte champLogin = new ChampTexte();
     private final ChampTexte champNom = new ChampTexte();
-    private final JComboBox<Role> comboRole = new JComboBox<>(Role.values());
+    private final JComboBox<Role> comboRole = new ListeDeroulante<>(Role.values(), 200);
     private final ChampMotDePasse champMotDePasse = new ChampMotDePasse("");
     private final ChampMotDePasse champConfirmation = new ChampMotDePasse("");
 

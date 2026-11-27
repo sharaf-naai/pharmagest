@@ -32,6 +32,7 @@ import pharmacie.model.LigneVente;
 import pharmacie.model.Medicament;
 import pharmacie.model.Vente;
 import pharmacie.ui.OutilsEcran;
+import pharmacie.ui.theme.ListeDeroulante;
 import pharmacie.ui.theme.Bouton;
 import pharmacie.ui.theme.Carte;
 import pharmacie.ui.theme.ChampTexte;
@@ -55,8 +56,8 @@ public class VentePanel extends JPanel {
     private final ClientDAO clientDAO = new ClientDAO();
 
     // --- Onglet « Nouvelle vente » ---
-    private final JComboBox<Object> comboClient = new JComboBox<>(); // contient le texte « Client de passage » puis des Client
-    private final JComboBox<Medicament> comboMedicament = new JComboBox<>();
+    private final JComboBox<Object> comboClient = new ListeDeroulante<>(240); // contient le texte « Client de passage » puis des Client
+    private final JComboBox<Medicament> comboMedicament = new ListeDeroulante<>(340);
     private final ChampTexte champQuantite = new ChampTexte();
     private final List<LigneVente> panier = new ArrayList<>();
     private final DefaultTableModel modelePanier =

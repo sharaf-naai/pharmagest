@@ -21,6 +21,7 @@ import pharmacie.dao.MedicamentDAO;
 import pharmacie.model.Categorie;
 import pharmacie.model.Medicament;
 import pharmacie.ui.OutilsEcran;
+import pharmacie.ui.theme.ListeDeroulante;
 import pharmacie.ui.theme.Bouton;
 import pharmacie.ui.theme.Carte;
 import pharmacie.ui.theme.ChampTexte;
@@ -50,7 +51,7 @@ public class MedicamentPanel extends JPanel {
     private final ChampTexte champPrix = new ChampTexte();
     private final ChampTexte champSeuil = new ChampTexte();
     private final ChampTexte champStock = new ChampTexte();
-    private final JComboBox<Categorie> listeCategories = new JComboBox<>();
+    private final JComboBox<Categorie> listeCategories = new ListeDeroulante<>(200);
 
     private List<Medicament> medicaments = new ArrayList<>(); // dans l'ordre des lignes du tableau
     private Medicament medicamentSelectionne;                 // null = aucun médicament choisi
