@@ -154,26 +154,38 @@ public class VentePanel extends JPanel {
     }
 
     private void chargerClients() {
+        // On garde l'id du client choisi pour le resélectionner après le rechargement
+        Object ancien = comboClient.getSelectedItem();
         comboClient.removeAllItems();
         comboClient.addItem(CLIENT_DE_PASSAGE); // RG15 : zéro ou un client
         try {
             for (Client c : clientDAO.lister()) {
                 comboClient.addItem(c);
+                if (ancien instanceof Client && ((Client) ancien).getIdClient() == c.getIdClient()) {
+                    comboClient.setSelectedItem(c);
+                }
             }
         } catch (DAOException e) {
             afficherErreurBase(e);
         }
+        // Si le client n'existe plus, la première entrée reste sélectionnée
     }
 
     private void chargerMedicaments() {
+        // On garde l'id du médicament choisi pour le resélectionner après le rechargement
+        Medicament ancien = (Medicament) comboMedicament.getSelectedItem();
         comboMedicament.removeAllItems();
         try {
             for (Medicament m : medicamentDAO.lister()) {
                 comboMedicament.addItem(m);
+                if (ancien != null && ancien.getIdMedicament() == m.getIdMedicament()) {
+                    comboMedicament.setSelectedItem(m);
+                }
             }
         } catch (DAOException e) {
             afficherErreurBase(e);
         }
+        // Si le médicament n'existe plus, la première entrée reste sélectionnée
     }
 
     /** Ajoute le médicament choisi au panier, ou augmente sa quantité s'il y est déjà (RG16). */
