@@ -3,6 +3,8 @@ package pharmacie.ui.panels;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,6 +83,13 @@ public class MedicamentPanel extends JPanel {
             chargerCategories();
         }
 
+        // Recharger les données chaque fois que l'onglet devient visible
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                rafraichir();
+            }
+        });
         rafraichir();
     }
 

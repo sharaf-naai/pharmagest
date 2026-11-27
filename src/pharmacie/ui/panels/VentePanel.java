@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
@@ -83,6 +85,17 @@ public class VentePanel extends JPanel {
         chargerClients();
         chargerMedicaments();
         rafraichirPanier();
+
+        // Recharger les données chaque fois que l'onglet devient visible.
+        // Le panier n'est pas vidé : seules les listes et l'historique sont relus.
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                chargerClients();
+                chargerMedicaments();
+                chargerHistorique();
+            }
+        });
     }
 
     // ===================== Nouvelle vente =====================

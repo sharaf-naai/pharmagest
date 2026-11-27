@@ -6,6 +6,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +72,13 @@ public class UtilisateurPanel extends JPanel {
 
         add(centre, BorderLayout.CENTER);
         add(formulaireCreation(), BorderLayout.EAST);
+        // Recharger les données chaque fois que l'onglet devient visible
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                charger();
+            }
+        });
         charger();
     }
 
