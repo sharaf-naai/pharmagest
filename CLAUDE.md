@@ -101,10 +101,24 @@ Conventions:
 
 - **Phase 2 (foundation, one agent)**: config, util, model, all DAOs (including the sale and delivery transactions), LoginFrame, MainFrame with role-based tabs + "Déconnexion", one **placeholder** panel per module, and `src/pharmacie/test/TestPhase2.java` (console checks against the real DB that clean up after themselves).
   Done when: admin logs in and sees 7 tabs; pharmacien sees 4; ancien is refused ("compte désactivé"); a wrong password shows a message, not a crash; Déconnexion returns to login; a sale above stock is refused and stock is unchanged; a valid sale decreases stock; TestPhase2 passes.
-- **Phase 3 (screens, up to 3 agents in parallel, one git branch each)**: each agent edits **only its own panel files** in `ui/panels/` (plus new helper classes it creates under `ui/`). It must not change DAOs, models, MainFrame or the SQL. If a DAO method is missing, stop and tell the user.
+- **Phase 3 (screens, 3 agents in parallel, each in its own git worktree and branch)**: each agent edits **only its own panel files** in `ui/panels/`, and puts any new helper classes in **its own package** (A: `pharmacie.ui.referentiels`, B: `pharmacie.ui.ventes`, C: `pharmacie.ui.stock`). It must not change DAOs, models, util, MainFrame, CLAUDE.md or the SQL. If a DAO method is missing or wrong, **stop and tell the user** instead of editing the DAO.
   - Agent A: MedicamentPanel, FournisseurPanel, ClientPanel (CRUD + search + JTable)
   - Agent B: VentePanel (new sale, lines, live total, sale history and detail)
-  - Agent C: StockPanel (quantities, low-stock and expiry alerts, new delivery), TableauDeBordPanel, UtilisateurPanel
+  - Agent C: StockPanel (quantities, low-stock and expiry alerts, new delivery, delivery history), TableauDeBordPanel, UtilisateurPanel
+  - The 3 agents share the same MySQL database: never reload `sql/pharmacie.sql` and never leave test data behind (delete what you create).
+
+## Screen conventions (Phase 3, all agents)
+
+Same look everywhere so the app feels like one program:
+- CRUD screens: search bar at the top (JTextField + "Rechercher" button, Enter also searches), JTable in the center (not editable, single selection, sortable with `setAutoCreateRowSorter(true)`), form on the right or bottom with buttons **Ajouter / Modifier / Supprimer / Vider**. Clicking a row fills the form.
+- Use a custom `AbstractTableModel` per table (not DefaultTableModel with Object[][]).
+- Ask for confirmation (`JOptionPane.showConfirmDialog`) before every delete and before validating a sale or a delivery.
+- Validate number and date fields in the panel before calling the DAO (clear message if the user types letters in a quantity).
+- Formats: money `0.00 DH` (BigDecimal, 2 decimals), dates `dd/MM/yyyy`, date-time `dd/MM/yyyy HH:mm`.
+- Each panel reloads its data every time its tab becomes visible (`addComponentListener` → `componentShown`), so a sale made in Ventes shows up at once in Stocks and the dashboard.
+- Role rules (RG03): PHARMACIEN sees Médicaments and Stocks **read-only** (hide the form buttons and the new-delivery form when `!Session.estAdmin()`). The user id for a sale or delivery always comes from `Session.getUtilisateur()`.
+- Errors: `RegleGestionException` → `JOptionPane` warning with its message; `DAOException` → error dialog "Erreur de base de données" + message. Never let an exception reach the console.
+- Labels and messages in French, no emoji, default Swing look & feel set in Main.
 
 ## Rules for the agent
 
