@@ -85,7 +85,7 @@ src/pharmacie/
   ui/LoginFrame + PanneauConnexion   login screen
   ui/MainFrame + BarreLaterale + EnTete   sidebar menu, top bar, one page per module (CardLayout)
   ui/theme/                 design system: Theme, Carte, Bouton, ChampTexte, ChampMotDePasse, BordureChamp,
-                            Tableaux, RenduBadge, Badge, Ton, OngletsSegmentes, CarteIndicateur, Icone
+                            Tableaux, RenduBadge, Badge, Ton, OngletsSegmentes, CarteIndicateur, Icone, ListeDeroulante
   ui/panels/                one JPanel per module (TableauDeBordPanel, MedicamentPanel, FournisseurPanel,
                             ClientPanel, VentePanel, StockPanel, UtilisateurPanel)
 ```
@@ -134,7 +134,7 @@ Look: light gray workspace, white rounded cards, green accent (pharmacy), clean 
 - **Buttons**: `Bouton(texte, Bouton.Style.X, Icone.Type.Y)`. PRIMAIRE = the one main action of the area (Ajouter, Valider la vente, Enregistrer), SECONDAIRE = Modifier, Vider, Annuler, Rechercher, DANGER = Supprimer, Retirer, DISCRET = minor links. One PRIMAIRE per area.
 - **Tables**: keep the existing models, then `Tableaux.styliser(table)`, put it in `Tableaux.defilement(table)`, set column widths with `Tableaux.largeur` so nothing important is cut, the name column in bold (`Tableaux.colonneEnGras`), amounts and quantities right-aligned (`Tableaux.alignerADroite`).
 - **Status columns as badges**: `Tableaux.colonneBadge(table, col)`; give badge columns at least 130 px. Use these exact words so colors are consistent (see `Ton.pour`): "En stock" (green), "Stock faible" (red), "Périmé" (red), "N jours" for expiry (amber), "Actif" / "Inactif", "Client de passage" (gray), role "Administrateur" (blue) / "Pharmacien" (gray).
-- **Forms**: inside a Carte, GridBagLayout, label above or left of each field (12.5 bold, `Theme.TEXTE`), fields = `ChampTexte` / `ChampMotDePasse`, or `BordureChamp.appliquer(field)` on an existing JTextField, JSpinner editor or similar. Combo boxes: just set `Theme.police(13f)` and preferred height `Theme.HAUTEUR_CONTROLE`.
+- **Forms**: inside a Carte, GridBagLayout, label above or left of each field (12.5 bold, `Theme.TEXTE`), fields = `ChampTexte` / `ChampMotDePasse`, or `BordureChamp.appliquer(field)` on an existing JTextField, JSpinner editor or similar. Combo boxes: always `new ListeDeroulante<>(minWidth)` (it sizes itself to its longest item, keeps the field height and widens its popup). Never call `setPreferredSize` on a combo box: it freezes the width while the list is still empty.
 - **Dashboard**: `CarteIndicateur(libellé, Icone.Type, couleur)` + `setValeur(...)`; the revenue card must be wide enough for "1 656.00 DH" (give it more weight in a GridBagLayout). Alert lists in Cartes with a title row: `Icone` ALERTE + bold title + `Badge(count, Ton)`.
 - **Totals** (sale cart, delivery): right-aligned, label in `TEXTE_SECONDAIRE`, amount in `Theme.police(Font.BOLD, 22f)`.
 - **Icons**: `new Icone(Icone.Type.X, size, color)`; never load image files.

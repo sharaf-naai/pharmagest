@@ -1,3 +1,5 @@
-﻿bin/
+bin/
 out/
+build/
+dist/
 db.properties

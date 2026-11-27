@@ -40,6 +40,7 @@ public class MainFrame extends JFrame {
     public MainFrame() {
         super("PharmaGest - Gestion de pharmacie");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setIconImages(Theme.imagesApplication()); // logo dans la barre des tâches
         boolean admin = Session.estAdmin();
 
         entete = new EnTete(Session.getUtilisateur());

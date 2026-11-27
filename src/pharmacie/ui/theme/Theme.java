@@ -2,9 +2,14 @@ package pharmacie.ui.theme;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
@@ -61,6 +66,19 @@ public final class Theme {
 
     public static Font police(float taille) {
         return police(Font.PLAIN, taille);
+    }
+
+    /** Logo de l'application en plusieurs tailles, pour l'icône des fenêtres et de la barre des tâches. */
+    public static List<Image> imagesApplication() {
+        List<Image> images = new ArrayList<>();
+        for (int taille : new int[] {16, 20, 24, 32, 40, 48, 64, 128, 256}) {
+            BufferedImage img = new BufferedImage(taille, taille, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = img.createGraphics();
+            new Icone(Icone.Type.LOGO, taille, PRIMAIRE).paintIcon(null, g, 0, 0);
+            g.dispose();
+            images.add(img);
+        }
+        return images;
     }
 
     /** Segoe UI sous Windows ; à défaut une police sans empattement disponible. */

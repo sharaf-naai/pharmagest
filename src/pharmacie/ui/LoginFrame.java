@@ -7,6 +7,7 @@ import javax.swing.JOptionPane;
 
 import pharmacie.dao.UtilisateurDAO;
 import pharmacie.model.Utilisateur;
+import pharmacie.ui.theme.Theme;
 import pharmacie.util.DAOException;
 import pharmacie.util.RegleGestionException;
 import pharmacie.util.Session;
@@ -20,6 +21,7 @@ public class LoginFrame extends JFrame {
     public LoginFrame() {
         super("PharmaGest - Connexion");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setIconImages(Theme.imagesApplication()); // logo dans la barre des tâches
         setContentPane(panneau);
 
         // Événement : clic sur le bouton, ou touche Entrée grâce au bouton par défaut
